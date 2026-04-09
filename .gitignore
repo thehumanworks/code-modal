@@ -1,0 +1,89 @@
+# macOS
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.TemporaryItems
+.nfs*
+
+# Linux / common temp files
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Editors
+.vscode/
+.idea/
+
+# Python bytecode and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+
+# Compiled/binary artifacts
+*.so
+*.dylib
+*.dll
+*.bundle
+
+# Virtual environments
+.python-version
+.venv/
+venv/
+env/
+ENV/
+venv.bak/
+ENV.bak/
+
+# Packaging and distribution artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+.wheels/
+pip-wheel-metadata/
+develop-eggs/
+__pypackages__/
+
+# Testing, linting, and type-checking caches
+.pytest_cache/
+.nox/
+.tox/
+.hypothesis/
+.mypy_cache/
+.pyright/
+.pyre/
+.pytype/
+.ruff_cache/
+.pylint.d/
+
+# Coverage and reports
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# Misc generated docs/build artifacts
+site/
+
+# Logs and local state
+*.log
+
+# Environment and local config (secrets)
+.env
+.envrc
+
+# Core dumps / crash files
+core
+core.*

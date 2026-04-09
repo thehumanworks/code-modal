@@ -1,0 +1,24 @@
+[project]
+name = "code-modal"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "modal>=1.4.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "integration: exercises Modal cloud APIs (requires credentials)",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
