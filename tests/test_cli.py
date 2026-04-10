@@ -1,5 +1,8 @@
+import io
 import json
 import shlex
+
+import pytest
 
 from code_modal import cli
 
@@ -155,6 +158,105 @@ def test_install_apt_builds_shell_command(monkeypatch, capsys):
         wrapped[2]
         == "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y -- ffmpeg git"
     )
+
+
+def test_image_build_from_path(monkeypatch, capsys):
+    captured = {}
+
+    def fake_build(**kwargs):
+        captured.update(kwargs)
+        return {"image_id": "im-abc"}
+
+    monkeypatch.setattr(cli, "build_image_from_dockerfile", fake_build)
+
+    exit_code = cli.main(["image", "build", "--path", "/tmp/Dockerfile"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {"image_id": "im-abc"}
+    assert captured["dockerfile_path"] == "/tmp/Dockerfile"
+    assert captured["dockerfile_content"] is None
+    assert captured["force_build"] is False
+
+
+def test_image_build_from_content(monkeypatch, capsys):
+    captured = {}
+
+    def fake_build(**kwargs):
+        captured.update(kwargs)
+        return {"image_id": "im-xyz"}
+
+    monkeypatch.setattr(cli, "build_image_from_dockerfile", fake_build)
+
+    exit_code = cli.main(["image", "build", "--content", "FROM python:3.12-slim"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {"image_id": "im-xyz"}
+    assert captured["dockerfile_path"] is None
+    assert captured["dockerfile_content"] == "FROM python:3.12-slim"
+
+
+def test_image_build_from_stdin(monkeypatch, capsys):
+    captured = {}
+
+    def fake_build(**kwargs):
+        captured.update(kwargs)
+        return {"image_id": "im-stdin"}
+
+    monkeypatch.setattr(cli, "build_image_from_dockerfile", fake_build)
+    monkeypatch.setattr("sys.stdin", io.StringIO("FROM alpine:3.20\nRUN echo hi\n"))
+
+    exit_code = cli.main(["image", "build", "--stdin"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {"image_id": "im-stdin"}
+    assert captured["dockerfile_path"] is None
+    assert captured["dockerfile_content"] == "FROM alpine:3.20\nRUN echo hi\n"
+
+
+def test_image_build_forwards_force_build(monkeypatch, capsys):
+    captured = {}
+
+    def fake_build(**kwargs):
+        captured.update(kwargs)
+        return {"image_id": "im-forced"}
+
+    monkeypatch.setattr(cli, "build_image_from_dockerfile", fake_build)
+
+    exit_code = cli.main(
+        ["image", "build", "--path", "/tmp/Dockerfile", "--force-build"]
+    )
+
+    assert exit_code == 0
+    assert captured["force_build"] is True
+
+
+def test_image_build_rejects_multiple_inputs(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli, "build_image_from_dockerfile", lambda **kwargs: {"image_id": "im-x"}
+    )
+
+    exit_code = cli.main(
+        ["image", "build", "--path", "/tmp/Dockerfile", "--content", "FROM alpine"]
+    )
+
+    assert exit_code == 2
+
+
+def test_image_build_returns_error_exit_code(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli,
+        "build_image_from_dockerfile",
+        lambda **kwargs: {"is_error": True, "result": "boom"},
+    )
+
+    exit_code = cli.main(["image", "build", "--content", "FROM alpine"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 1
+    assert payload["is_error"] is True
 
 
 def test_volume_push_accepts_mapping_syntax(monkeypatch, capsys):

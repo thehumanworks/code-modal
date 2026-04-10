@@ -1,4 +1,8 @@
+import tempfile
+from pathlib import Path
+
 import modal
+
 from .constants import (
     PYTHON_VERSION,
     NODE_VERSION,
@@ -7,6 +11,7 @@ from .constants import (
     BUN_VERSION,
     DEFAULT_WORKDIR,
 )
+from .shared import get_app
 
 BASE_APT_PACKAGES = (
     "bash",
@@ -75,3 +80,37 @@ def build_or_get_image(app: modal.App, force_build: bool = False) -> modal.Image
         image = image.build(app=app)
 
         return image
+
+
+def build_image_from_dockerfile(
+    dockerfile_path: str | None = None,
+    dockerfile_content: str | None = None,
+    force_build: bool = False,
+    app: modal.App | None = None,
+) -> dict:
+    if (dockerfile_path is None) == (dockerfile_content is None):
+        return {
+            "is_error": True,
+            "result": "provide exactly one of dockerfile_path or dockerfile_content",
+        }
+
+    if dockerfile_path is not None and not modal.is_local():
+        return {
+            "is_error": True,
+            "result": "dockerfile_path requires a local environment; pass dockerfile_content instead.",
+        }
+
+    app = app or get_app()
+
+    with modal.enable_output():
+        if dockerfile_path is not None:
+            image = modal.Image.from_dockerfile(dockerfile_path, force_build=force_build)
+            image = image.build(app=app)
+            return {"image_id": image.object_id}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp) / "Dockerfile"
+            tmp_path.write_text(dockerfile_content)
+            image = modal.Image.from_dockerfile(str(tmp_path), force_build=force_build)
+            image = image.build(app=app)
+            return {"image_id": image.object_id}
