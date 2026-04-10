@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "code-modal"
 version = "0.1.0"
@@ -6,8 +10,12 @@ dependencies = [
     "modal>=1.4.1",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [project.scripts]
 code-modal = "code_modal.cli:main"
+cm = "code_modal.cli:main"
 
 [project.optional-dependencies]
 dev = [
