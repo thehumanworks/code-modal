@@ -14,6 +14,7 @@ from .constants import (
 )
 from .execution import exec as exec_command
 from .execution import stream as stream_command
+from .image import build_image_from_dockerfile
 from .sandbox import (
     copy_file_from_sandbox,
     copy_file_to_sandbox,
@@ -224,6 +225,25 @@ def handle_sandbox_snapshot(args):
     return 0
 
 
+def handle_image_build(args):
+    path = None
+    content = None
+    if args.stdin:
+        content = sys.stdin.read()
+    elif args.content is not None:
+        content = args.content
+    else:
+        path = args.path
+
+    result = build_image_from_dockerfile(
+        dockerfile_path=path,
+        dockerfile_content=content,
+        force_build=args.force_build,
+    )
+    _emit_json(result, pretty=args.pretty)
+    return 1 if isinstance(result, dict) and result.get("is_error") else 0
+
+
 def handle_run(args):
     command = _shell_command(args.command)
     kwargs = _exec_kwargs(args)
@@ -410,6 +430,17 @@ def build_parser():
     sandbox_snapshot.add_argument("--sandbox", required=True)
     sandbox_snapshot.add_argument("--path")
     sandbox_snapshot.set_defaults(handler=handle_sandbox_snapshot)
+
+    image_parser = subparsers.add_parser("image")
+    image_subparsers = image_parser.add_subparsers(dest="image_command", required=True)
+
+    image_build = image_subparsers.add_parser("build", parents=[json_parent])
+    image_source = image_build.add_mutually_exclusive_group(required=True)
+    image_source.add_argument("--path")
+    image_source.add_argument("--content")
+    image_source.add_argument("--stdin", action="store_true")
+    image_build.add_argument("--force-build", action="store_true")
+    image_build.set_defaults(handler=handle_image_build)
 
     run_parser = subparsers.add_parser("run", parents=[json_parent, exec_parent])
     run_parser.add_argument("--detach", action="store_true")
