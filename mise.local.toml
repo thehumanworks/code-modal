@@ -1,0 +1,14 @@
+[tools]
+"pipx:modal" = "latest"
+python = "latest"
+uv = "0.11.3"
+
+[tasks.trust]
+run = "mise trust --all"
+
+[tasks.source]
+depends = "trust"
+run = "mise en ."
+
+[hooks.enter]
+task = "source"
